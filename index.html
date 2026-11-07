@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PORT_HACKER: EDUCATIONAL EDITION</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --primary: #00ff41;
+            --primary-dim: #008f11;
+            --secondary: #00ffff;
+            --danger: #ff003c;
+            --text-main: #e0e0e0;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--primary-dim);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+            width: 100%;
+            max-width: 650px;
+            padding: 40px 30px;
+            z-index: 10;
+            display: none;
+        }
+
+        .hud {
+            display: flex; justify-content: space-between;
+            border-bottom: 2px dashed var(--primary-dim);
+            padding-bottom: 10px; margin-bottom: 20px; font-size: 1.2rem;
+        }
+        .hud span { color: var(--primary); font-weight: bold; text-shadow: 0 0 5px var(--primary); }
+        #mode-display { color: var(--secondary); text-shadow: 0 0 5px var(--secondary); }
+        #hp { color: var(--danger); text-shadow: 0 0 5px var(--danger); letter-spacing: 2px;}
+
+        .timer-bar-container { width: 100%; height: 6px; background-color: #222; margin-bottom: 30px; }
+        .timer-bar { height: 100%; width: 100%; background-color: var(--primary); box-shadow: 0 0 10px var(--primary); }
+
+        .quiz-box { text-align: center; margin-bottom: 30px; min-height: 120px; }
+        .question-label { font-size: 1rem; color: #888; margin-bottom: 10px; letter-spacing: 2px;}
+        
+        .target-name {
+            font-size: 3.5rem; font-weight: bold; color: var(--primary);
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.6); margin-bottom: 30px;
+        }
+        .reverse-mode { color: var(--secondary); text-shadow: 0 0 15px rgba(0, 255, 255, 0.6); }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-option {
+            background-color: transparent; color: var(--text-main);
+            border: 1px solid var(--primary-dim); padding: 20px;
+            font-family: var(--font-mono); font-size: 1.5rem;
+            cursor: pointer; transition: all 0.1s; position: relative;
+        }
+        .btn-option::before { content: "[" attr(data-key) "] "; color: #555; font-size: 1rem; position: absolute; top: 5px; left: 8px; }
+        .btn-option:hover { background-color: rgba(0, 255, 65, 0.15); border-color: var(--primary); transform: scale(1.02); }
+
+        /* 解説パネル */
+        .explanation-panel {
+            display: none;
+            background: rgba(0, 40, 20, 0.9);
+            border: 2px solid var(--primary);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.2);
+            min-height: 140px;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .exp-title { font-size: 1.8rem; color: var(--primary); font-weight: bold; margin-bottom: 10px; }
+        .exp-desc { font-size: 1.1rem; color: var(--text-main); line-height: 1.5; margin-bottom: 20px; font-family: sans-serif; }
+        .exp-prompt { font-size: 0.9rem; color: var(--primary-dim); animation: blink 1.5s infinite; letter-spacing: 2px;}
+
+        .floating-score {
+            position: absolute; color: var(--primary); font-weight: bold; font-size: 1.5rem;
+            text-shadow: 0 0 5px var(--primary); pointer-events: none; z-index: 100;
+        }
+
+        .swal-cyber {
+            border: 2px solid var(--primary) !important; background: rgba(10, 10, 10, 0.95) !important;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3) !important; font-family: var(--font-mono) !important;
+        }
+        .btn-mode {
+            background: transparent; color: var(--primary); border: 1px solid var(--primary-dim);
+            padding: 15px; font-family: var(--font-mono); font-size: 1.2rem; cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .btn-mode:hover { background: rgba(0, 255, 65, 0.2); border-color: var(--primary); padding-left: 25px; }
+        .btn-mode.hard { color: #ffaa00; border-color: #aa7700; }
+        .btn-mode.hard:hover { background: rgba(255, 170, 0, 0.2); border-color: #ffaa00; }
+        .btn-mode.omake { color: var(--secondary); border-color: #00aaaa; }
+        .btn-mode.omake:hover { background: rgba(0, 255, 255, 0.2); border-color: var(--secondary); }
+
+        @keyframes blink { 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="game-ui">
+        <div class="hud">
+            <div>MODE: <span id="mode-display">NORMAL</span></div>
+            <div>STAGE <span id="stage">1</span>/<span id="max-stages">10</span></div>
+            <div>COMBO <span id="combo">0</span></div>
+            <div>HP <span id="hp">♥♥♥</span></div>
+            <div>SCORE <span id="score">0</span></div>
+        </div>
+
+        <div class="timer-bar-container">
+            <div id="timer-bar" class="timer-bar"></div>
+        </div>
+
+        <div class="quiz-box">
+            <div class="question-label" id="question-text">Target Protocol > Identify Port</div>
+            <div class="target-name" id="target-display">HTTP</div>
+        </div>
+
+        <!-- 選択肢 -->
+        <div class="options-grid" id="options-container">
+            <button class="btn-option" data-key="1" id="btn-0" onclick="selectAnswer(0)"></button>
+            <button class="btn-option" data-key="2" id="btn-1" onclick="selectAnswer(1)"></button>
+            <button class="btn-option" data-key="3" id="btn-2" onclick="selectAnswer(2)"></button>
+            <button class="btn-option" data-key="4" id="btn-3" onclick="selectAnswer(3)"></button>
+        </div>
+
+        <!-- 解説パネル (解答後に表示) -->
+        <div class="explanation-panel" id="explanation-panel" onclick="proceedToNextStage()">
+            <div class="exp-title" id="exp-title">HTTP (80)</div>
+            <div class="exp-desc" id="exp-desc">ここにプロトコルの解説が入ります。</div>
+            <div class="exp-prompt">PRESS ANY KEY OR CLICK TO CONTINUE ▶</div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx;
+        function initAudio() {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, type, duration, vol=0.1) {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        const sfx = {
+            hover: () => playTone(800, 'sine', 0.1, 0.02),
+            correct: () => { playTone(880, 'square', 0.1); setTimeout(()=>playTone(1760, 'square', 0.15), 100); },
+            wrong: () => playTone(150, 'sawtooth', 0.4, 0.2),
+            combo: () => { playTone(440, 'sine', 0.1); setTimeout(()=>playTone(554, 'sine', 0.1), 100); setTimeout(()=>playTone(659, 'sine', 0.2), 200); },
+            gameover: () => { playTone(200, 'sawtooth', 0.5, 0.3); setTimeout(()=>playTone(150, 'sawtooth', 1.0, 0.3), 300); }
+        };
+
+        // --- データベース (解説を追加) ---
+        const dbNormal = [
+            { name: "FTP (Data)", port: 20, desc: "ファイル転送時のデータ通信に使われるポート。" },
+            { name: "FTP (Control)", port: 21, desc: "ファイル転送の制御コマンド通信用ポート。" },
+            { name: "SSH", port: 22, desc: "暗号化された安全なリモートログインプロトコル。" },
+            { name: "Telnet", port: 23, desc: "暗号化されていないリモートログイン（現在は非推奨）。" },
+            { name: "SMTP", port: 25, desc: "メールの送信・転送を行うプロトコル。" },
+            { name: "DNS", port: 53, desc: "ドメイン名とIPアドレスを変換する名前解決システム。" },
+            { name: "HTTP", port: 80, desc: "Webサイトの閲覧に使われる暗号化なしの通信。" },
+            { name: "POP3", port: 110, desc: "メールサーバーからメールを受信するプロトコル。" },
+            { name: "NTP", port: 123, desc: "ネットワーク上の機器の時刻を同期する。" },
+            { name: "IMAP", port: 143, desc: "サーバー上でメールを管理・操作する受信プロトコル。" },
+            { name: "HTTPS", port: 443, desc: "SSL/TLSで暗号化された安全なWebサイト閲覧。" }
+        ];
+
+        const dbHard = [
+            ...dbNormal,
+            { name: "DHCP (Server)", port: 67, desc: "IPアドレスを自動割り当てするサーバー側ポート。" },
+            { name: "DHCP (Client)", port: 68, desc: "IPアドレスを受け取るクライアント側ポート。" },
+            { name: "TFTP", port: 69, desc: "認証機能のない軽量なファイル転送プロトコル。" },
+            { name: "SNMP", port: 161, desc: "ネットワーク機器を監視・管理するプロトコル。" },
+            { name: "SNMP Trap", port: 162, desc: "ネットワーク機器から管理者へ異常を通知する。" },
+            { name: "BGP", port: 179, desc: "インターネットの経路情報を交換するルーティングプロトコル。" },
+            { name: "LDAP", port: 389, desc: "ディレクトリサービス（ユーザー情報など）へのアクセス。" },
+            { name: "SMB", port: 445, desc: "Windowsのファイル共有やプリンタ共有で利用される。" },
+            { name: "SMTPS", port: 465, desc: "SSL/TLSで暗号化された安全なメール送信。" },
+            { name: "Syslog", port: 514, desc: "ログメッセージをネットワーク経由で転送する。" },
+            { name: "IMAPS", port: 993, desc: "SSL/TLSで暗号化されたIMAP通信。" },
+            { name: "POP3S", port: 995, desc: "SSL/TLSで暗号化されたPOP3通信。" },
+            { name: "OpenVPN", port: 1194, desc: "VPN接続を構築するためのプロトコル。" },
+            { name: "MySQL", port: 3306, desc: "世界で最も普及しているオープンソースのリレーショナルDB。" },
+            { name: "RDP", port: 3389, desc: "Windowsのリモートデスクトップ接続ポート。" },
+            { name: "PostgreSQL", port: 5432, desc: "高度な機能を持つオープンソースのリレーショナルDB。" }
+        ];
+
+        const dbOmake = [
+            ...dbHard,
+            { name: "Next.js / React", port: 3000, desc: "Next.jsやReactのローカル開発サーバーのデフォルト。" },
+            { name: "Vite", port: 5173, desc: "高速なフロントエンドビルドツールViteの開発サーバー。" },
+            { name: "PHP-FPM", port: 9000, desc: "PHPのFastCGIプロセスマネージャー。" },
+            { name: "Laravel", port: 8000, desc: "PHPフレームワークLaravelの開発サーバー (artisan serve)。" },
+            { name: "Minecraft Java", port: 25565, desc: "Minecraft Java Editionのマルチプレイサーバー。" },
+            { name: "Minecraft BE", port: 19132, desc: "Minecraft 統合版(Bedrock Edition)のサーバー。" },
+            { name: "Terraria", port: 7777, desc: "2Dサンドボックスゲーム Terrariaのサーバー。" },
+            { name: "Docker API", port: 2375, desc: "Dockerデーモンを外部から操作する非暗号化API。" },
+            { name: "Redis", port: 6379, desc: "高速なインメモリのKVS (Key-Value Store)。" },
+            { name: "MongoDB", port: 27017, desc: "代表的なNoSQLドキュメントデータベース。" },
+            { name: "Elasticsearch", port: 9200, desc: "高速な全文検索エンジン・分析データストア。" },
+            { name: "Memcached", port: 11211, desc: "シンプルで高速な分散メモリキャッシュ。" },
+            { name: "Tomcat", port: 8080, desc: "JavaのWebアプリケーションサーバー、または代替HTTP。" }
+        ];
+
+        let state = {
+            mode: 'normal', currentPool: [], remainingQuestions: [],
+            stage: 1, maxStages: 10, score: 0, combo: 0, hp: 3, 
+            isAnswered: false, isExplaining: false, 
+            currentTarget: null, currentOptions: []
+        };
+        let timerAnim;
+        let scoreObj = { val: 0 };
+
+        window.onload = showMenu;
+
+        function showMenu() {
+            document.getElementById('game-ui').style.display = 'none';
+            Swal.fire({
+                title: 'SELECT DIFFICULTY',
+                html: `
+                    <div style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+                        <button class="btn-mode" onclick="Swal.close(); bootGame('normal')">
+                            [1] NORMAL<br><span style="font-size:0.8rem; color:#888;">ウェルノウンポート限定 (全10問)</span>
+                        </button>
+                        <button class="btn-mode hard" onclick="Swal.close(); bootGame('hard')">
+                            [2] HARD<br><span style="font-size:0.8rem; color:#888;">マイナーなプロトコルを含む (全15問)</span>
+                        </button>
+                        <button class="btn-mode omake" onclick="Swal.close(); bootGame('omake')">
+                            [3] OMAKE (DEV & GAMES)<br><span style="font-size:0.8rem; color:#888;">Next.js, Minecraft等 開発/ゲーム系全盛り (全20問)</span>
+                        </button>
+                    </div>
+                `,
+                showConfirmButton: false, background: '#0a0a0a', color: '#00ff41',
+                customClass: { popup: 'swal-cyber' }, allowOutsideClick: false
+            });
+        }
+
+        // キーボード操作対応 (解説パネルのスキップも含む)
+        document.addEventListener('keydown', (e) => {
+            if(document.getElementById('game-ui').style.display === 'none') {
+                if(e.key === '1') { Swal.close(); bootGame('normal'); }
+                if(e.key === '2') { Swal.close(); bootGame('hard'); }
+                if(e.key === '3') { Swal.close(); bootGame('omake'); }
+            } else if (state.isExplaining) {
+                // 解説表示中は任意のキーで次へ
+                proceedToNextStage();
+            } else if (!state.isAnswered) {
+                const keyMap = {'1':0, '2':1, '3':2, '4':3};
+                if(keyMap[e.key] !== undefined) selectAnswer(keyMap[e.key]);
+            }
+        });
+
+        function bootGame(mode) {
+            initAudio();
+            document.getElementById('game-ui').style.display = 'block';
+            
+            state.mode = mode;
+            if(mode === 'normal') { state.currentPool = [...dbNormal]; state.maxStages = 10; document.getElementById('mode-display').style.color = "var(--primary)"; }
+            if(mode === 'hard') { state.currentPool = [...dbHard]; state.maxStages = 15; document.getElementById('mode-display').style.color = "#ffaa00"; }
+            if(mode === 'omake') { state.currentPool = [...dbOmake]; state.maxStages = 20; document.getElementById('mode-display').style.color = "var(--secondary)"; }
+            
+            document.getElementById('mode-display').textContent = mode.toUpperCase();
+            document.getElementById('max-stages').textContent = state.maxStages;
+
+            document.querySelectorAll('.btn-option').forEach(btn => btn.addEventListener('mouseenter', sfx.hover));
+            
+            // 問題プールをシャッフル（重複出題を防止）
+            state.remainingQuestions = [...state.currentPool].sort(() => 0.5 - Math.random());
+            
+            state.stage = 1; state.score = 0; state.combo = 0; state.hp = 3; 
+            state.isAnswered = false; state.isExplaining = false;
+            scoreObj.val = 0;
+            updateHUD(); loadStage();
+        }
+
+        function loadStage() {
+            state.isAnswered = false; state.isExplaining = false;
+            if(timerAnim) timerAnim.pause();
+            
+            document.getElementById('options-container').style.display = 'grid';
+            document.getElementById('explanation-panel').style.display = 'none';
+            document.getElementById('timer-bar').style.width = '100%';
+            document.getElementById('timer-bar').style.backgroundColor = 'var(--primary)';
+            
+            document.querySelectorAll('.btn-option').forEach(btn => {
+                btn.style.backgroundColor = 'transparent'; btn.style.borderColor = 'var(--primary-dim)'; btn.style.color = 'var(--text-main)';
+            });
+
+            // シャッフル済み配列から1つ取り出す (重複なし)
+            state.currentTarget = state.remainingQuestions.pop();
+            const isReverse = Math.random() < 0.35;
+
+            const qText = document.getElementById('question-text');
+            const tDisplay = document.getElementById('target-display');
+            
+            if (isReverse) {
+                qText.textContent = "Target Port > Identify Protocol";
+                tDisplay.textContent = ":" + state.currentTarget.port;
+                tDisplay.className = 'target-name reverse-mode';
+                generateOptions(state.currentTarget.name, true);
+            } else {
+                qText.textContent = "Target Protocol > Identify Port";
+                tDisplay.textContent = state.currentTarget.name;
+                tDisplay.className = 'target-name';
+                generateOptions(state.currentTarget.port, false);
+            }
+
+            let timeDecay = (state.mode === 'omake') ? 450 : (state.mode === 'hard' ? 400 : 300);
+            const timeLimit = Math.max(3500, 10000 - (state.stage * timeDecay));
+            startTimer(timeLimit);
+        }
+
+        function generateOptions(correctVal, isReverse) {
+            const options = [correctVal];
+            while (options.length < 4) {
+                // ダミーの選択肢は全プールからランダム取得
+                const rnd = state.currentPool[Math.floor(Math.random() * state.currentPool.length)];
+                const candidate = isReverse ? rnd.name : rnd.port;
+                if (!options.includes(candidate)) options.push(candidate);
+            }
+            state.currentOptions = options.sort(() => 0.5 - Math.random());
+            
+            for(let i=0; i<4; i++) {
+                document.getElementById('btn-'+i).textContent = state.currentOptions[i];
+            }
+        }
+
+        function startTimer(duration) {
+            timerAnim = anime({
+                targets: '#timer-bar', width: '0%', duration: duration, easing: 'linear',
+                update: function(anim) { if(anim.progress > 70) document.getElementById('timer-bar').style.backgroundColor = 'var(--danger)'; },
+                complete: function() { handleWrongAnswer(null); }
+            });
+        }
+
+        function selectAnswer(index) {
+            if(state.isAnswered) return;
+            state.isAnswered = true; timerAnim.pause();
+
+            const selected = state.currentOptions[index];
+            const btn = document.getElementById('btn-'+index);
+
+            // currentTargetのプロパティと比較
+            const isCorrect = (selected === state.currentTarget.name || selected === state.currentTarget.port);
+
+            if(isCorrect) handleCorrect(btn);
+            else handleWrongAnswer(btn);
+        }
+
+        function handleCorrect(btn) {
+            state.combo++;
+            const modeMult = state.mode === 'omake' ? 1.5 : (state.mode === 'hard' ? 1.2 : 1.0);
+            const timeRemains = parseFloat(document.getElementById('timer-bar').style.width) / 100;
+            const earned = Math.floor(((100 + (timeRemains * 200)) * (1 + state.combo * 0.2)) * modeMult);
+            
+            animateScore(earned); showFloatingText(`+${earned}`, btn, 'var(--primary)');
+            
+            btn.style.backgroundColor = 'var(--primary)'; btn.style.color = '#000';
+            
+            if(state.combo > 0 && state.combo % 3 === 0) {
+                sfx.combo(); fireConfetti();
+                showFloatingText(`COMBO x${state.combo}!`, document.getElementById('combo'), 'var(--secondary)');
+            } else {
+                sfx.correct();
+            }
+            
+            // 演出後、解説パネルを表示
+            setTimeout(showExplanation, 500);
+        }
+
+        function handleWrongAnswer(btn) {
+            state.combo = 0; state.hp--;
+            sfx.wrong(); updateHUD();
+
+            anime({ targets: '#game-ui', translateX: [0, -15, 15, -15, 15, 0], duration: 400, easing: 'easeInOutQuad' });
+
+            if(btn) {
+                btn.style.backgroundColor = 'var(--danger)'; showFloatingText('DENIED', btn, 'var(--danger)');
+            } else {
+                showFloatingText('TIMEOUT', document.getElementById('timer-bar'), 'var(--danger)');
+            }
+
+            // 正解をハイライト
+            for(let i=0; i<4; i++) {
+                if(state.currentOptions[i] === state.currentTarget.name || state.currentOptions[i] === state.currentTarget.port) {
+                    document.getElementById('btn-'+i).style.borderColor = 'var(--primary)';
+                    document.getElementById('btn-'+i).style.color = 'var(--primary)';
+                }
+            }
+
+            setTimeout(showExplanation, 600);
+        }
+
+        // 解説パネルの表示
+        function showExplanation() {
+            state.isExplaining = true;
+            document.getElementById('options-container').style.display = 'none';
+            
+            const expPanel = document.getElementById('explanation-panel');
+            expPanel.style.display = 'flex';
+            
+            document.getElementById('exp-title').textContent = `${state.currentTarget.name} (Port ${state.currentTarget.port})`;
+            document.getElementById('exp-desc').textContent = state.currentTarget.desc;
+
+            // ふわっと表示するアニメーション
+            anime({
+                targets: expPanel, opacity: [0, 1], translateY: [20, 0], duration: 300, easing: 'easeOutQuad'
+            });
+        }
+
+        function proceedToNextStage() {
+            if(!state.isExplaining) return;
+            state.isExplaining = false;
+            
+            if(state.hp <= 0) {
+                showGameOver();
+            } else {
+                state.stage++;
+                if(state.stage > state.maxStages) showGameClear();
+                else { updateHUD(); loadStage(); }
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('stage').textContent = Math.min(state.stage, state.maxStages);
+            document.getElementById('combo').textContent = state.combo;
+            document.getElementById('hp').textContent = '♥'.repeat(state.hp) + '♡'.repeat(3 - state.hp);
+        }
+
+        function animateScore(addVal) {
+            state.score += addVal;
+            anime({
+                targets: scoreObj, val: state.score, round: 1, duration: 1000, easing: 'easeOutExpo',
+                update: () => { document.getElementById('score').textContent = scoreObj.val; }
+            });
+        }
+
+        function showFloatingText(text, targetEl, color) {
+            const rect = targetEl.getBoundingClientRect(); const floatEl = document.createElement('div');
+            floatEl.className = 'floating-score'; floatEl.textContent = text;
+            floatEl.style.left = (rect.left + rect.width / 2 - 40) + 'px'; floatEl.style.top = rect.top + 'px';
+            floatEl.style.color = color; document.body.appendChild(floatEl);
+            
+            anime({ targets: floatEl, translateY: -80, opacity: [1, 0], duration: 1200, easing: 'easeOutCubic', complete: () => floatEl.remove() });
+        }
+
+        function fireConfetti() {
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.8 }, colors: ['#00ff41', '#00ffff', '#ffffff'], disableForReducedMotion: true });
+        }
+
+        function showGameOver() {
+            sfx.gameover();
+            Swal.fire({
+                title: 'HACK FAILED',
+                html: `SYSTEM LOCKED OUT<br><br>MODE: ${state.mode.toUpperCase()}<br>FINAL SCORE: <b>${state.score}</b>`,
+                background: '#111', color: 'var(--danger)', confirmButtonColor: 'var(--danger)', confirmButtonText: 'RETURN TO MENU',
+                customClass: { popup: 'swal-cyber' }
+            }).then(showMenu);
+        }
+
+        function showGameClear() {
+            sfx.combo(); let burst = 3;
+            const cInterval = setInterval(() => { fireConfetti(); burst--; if(burst === 0) clearInterval(cInterval); }, 300);
+
+            Swal.fire({
+                title: 'ACCESS GRANTED!',
+                html: `ALL SECURITY CLEARED.<br><br>MODE: ${state.mode.toUpperCase()}<br>FINAL SCORE: <b style="color:var(--primary); font-size:24px;">${state.score}</b>`,
+                background: '#111', color: 'var(--primary)', confirmButtonColor: 'var(--primary-dim)', confirmButtonText: 'RETURN TO MENU',
+                customClass: { popup: 'swal-cyber' }
+            }).then(showMenu);
+        }
+    </script>
+</body>
+</html>
