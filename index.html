@@ -14,8 +14,29 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script> <!-- 滑らかなUIアニメーション・画面揺れ用 -->
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> <!-- コンボ・クリア時の紙吹雪用 -->
         
-        <!-- CoffeeScriptをブラウザで直接動かすためのコンパイラ -->
+        <!-- CoffeeScriptコンパイラ -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/coffeescript/2.7.0/coffeescript.js"></script>
+
+        <!-- main.coffeeを確実に読み込んで実行するコード -->
+        <script>
+            window.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const response = await fetch('main.coffee');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const coffeeCode = await response.text();
+                    const jsCode = CoffeeScript.compile(coffeeCode, { bare: true });
+                    
+                    const scriptEl = document.createElement('script');
+                    scriptEl.textContent = jsCode;
+                    document.body.appendChild(scriptEl);
+                    
+                    console.log('main.coffee のコンパイル＆実行に成功しました！');
+                } catch (error) {
+                    console.error('CoffeeScriptの読み込み・実行エラー:', error);
+                }
+            });
+        </script>
         
     </head>
     <body>
