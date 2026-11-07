@@ -1,0 +1,331 @@
+let audioCtx;
+function initAudio() {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq, type, duration, vol=0.1) {
+    if(!audioCtx) return;
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+}
+const sfx = {
+    hover: () => playTone(800, 'sine', 0.1, 0.02),
+    correct: () => { playTone(880, 'square', 0.1); setTimeout(()=>playTone(1760, 'square', 0.15), 100); },
+    wrong: () => playTone(150, 'sawtooth', 0.4, 0.2),
+    combo: () => { playTone(440, 'sine', 0.1); setTimeout(()=>playTone(554, 'sine', 0.1), 100); setTimeout(()=>playTone(659, 'sine', 0.2), 200); },
+    gameover: () => { playTone(200, 'sawtooth', 0.5, 0.3); setTimeout(()=>playTone(150, 'sawtooth', 1.0, 0.3), 300); }
+};
+
+// --- 厳密なポート番号データベース ---
+
+// 1. NORMAL: ウェルノウンポート(0-1023) 非常に有名なもの
+const dbWellKnownFamous = [
+    { name: "FTP (Data)", port: 20, desc: "ファイル転送のデータ通信用（ウェルノウン）。" },
+    { name: "FTP (Control)", port: 21, desc: "ファイル転送の制御コマンド用（ウェルノウン）。" },
+    { name: "SSH", port: 22, desc: "安全なリモートログイン（ウェルノウン）。Github接続等でも活躍。" },
+    { name: "Telnet", port: 23, desc: "非暗号化リモートログイン（ウェルノウン）。現在は非推奨。" },
+    { name: "SMTP", port: 25, desc: "メールの送信・転送（ウェルノウン）。" },
+    { name: "DNS", port: 53, desc: "名前解決システム。UDP/TCP両方使用（ウェルノウン）。" },
+    { name: "HTTP", port: 80, desc: "Webサイト閲覧の基本ポート（ウェルノウン）。" },
+    { name: "POP3", port: 110, desc: "メール受信（ウェルノウン）。" },
+    { name: "NTP", port: 123, desc: "ネットワーク上の時刻同期（ウェルノウン）。" },
+    { name: "IMAP", port: 143, desc: "サーバー上でのメール管理（ウェルノウン）。" },
+    { name: "HTTPS", port: 443, desc: "暗号化された安全なWebサイト閲覧（ウェルノウン）。" },
+    { name: "SMB", port: 445, desc: "Windowsのファイル・プリンタ共有（ウェルノウン）。" }
+];
+
+// 2. HARD拡張: ウェルノウンポート(0-1023) マイナー/インフラ系
+const dbWellKnownMinor = [
+    { name: "DHCP (Server)", port: 67, desc: "IPアドレス自動割り当てのサーバー側（ウェルノウン）。" },
+    { name: "DHCP (Client)", port: 68, desc: "IPアドレスを受け取るクライアント側（ウェルノウン）。" },
+    { name: "TFTP", port: 69, desc: "認証機能がない軽量ファイル転送（ウェルノウン）。ルーター設定等に。" },
+    { name: "Finger", port: 79, desc: "ユーザー情報を提供する古いプロトコル（ウェルノウン）。" },
+    { name: "Kerberos", port: 88, desc: "ネットワーク認証システム（ウェルノウン）。Active Directoryで使用。" },
+    { name: "NetBIOS (Name)", port: 137, desc: "Windowsのレガシーな名前解決（ウェルノウン）。" },
+    { name: "SNMP", port: 161, desc: "ネットワーク機器の監視・管理（ウェルノウン）。" },
+    { name: "SNMP Trap", port: 162, desc: "ネットワーク機器からの異常通知（ウェルノウン）。" },
+    { name: "BGP", port: 179, desc: "インターネットのルーティングプロトコル（ウェルノウン）。" },
+    { name: "LDAP", port: 389, desc: "ディレクトリサービスへのアクセス（ウェルノウン）。" },
+    { name: "SMTPS", port: 465, desc: "暗号化されたメール送信（ウェルノウン）。" },
+    { name: "ISAKMP (IPsec)", port: 500, desc: "VPN(IPsec)の鍵交換で使用（ウェルノウン）。" },
+    { name: "Syslog", port: 514, desc: "ログメッセージのネットワーク転送（ウェルノウン）。" },
+    { name: "Submission", port: 587, desc: "メール送信時のユーザー認証付きポート（ウェルノウン）。" },
+    { name: "LDAPS", port: 636, desc: "暗号化されたLDAP（ウェルノウン）。" },
+    { name: "FTPS", port: 990, desc: "暗号化されたFTP通信（ウェルノウン）。" },
+    { name: "IMAPS", port: 993, desc: "暗号化されたIMAP通信（ウェルノウン）。" },
+    { name: "POP3S", port: 995, desc: "暗号化されたPOP3通信（ウェルノウン）。" }
+];
+
+// 3. OMAKE拡張: レジスタードポート(1024-49151) ＋ 動的・プライベート
+const dbRegisteredAndDev = [
+    { name: "OpenVPN", port: 1194, desc: "VPN接続用（レジスタードポート）。" },
+    { name: "SQL Server", port: 1433, desc: "Microsoft SQL Server（レジスタードポート）。" },
+    { name: "Oracle DB", port: 1521, desc: "Oracle Database（レジスタードポート）。" },
+    { name: "Docker API", port: 2375, desc: "Dockerデーモンを外部操作する非暗号化API。" },
+    { name: "React/Next.js", port: 3000, desc: "Node.js系フレームワークのローカル開発デフォルト。" },
+    { name: "MySQL", port: 3306, desc: "オープンソースRDBMSの代表格（レジスタードポート）。" },
+    { name: "RDP", port: 3389, desc: "Windowsリモートデスクトップ（レジスタードポート）。" },
+    { name: "Vite", port: 5173, desc: "高速フロントエンドビルドツールViteのデフォルト。" },
+    { name: "PostgreSQL", port: 5432, desc: "高度な機能を持つRDBMS（レジスタードポート）。" },
+    { name: "VNC", port: 5900, desc: "クロスプラットフォームな画面共有（レジスタードポート）。" },
+    { name: "Redis", port: 6379, desc: "高速なインメモリKVS（レジスタードポート）。" },
+    { name: "Terraria", port: 7777, desc: "2Dサンドボックスゲーム Terrariaのマルチサーバー。" },
+    { name: "Laravel", port: 8000, desc: "PHPフレームワーク Laravel の artisan serve デフォルト。" },
+    { name: "Tomcat", port: 8080, desc: "Java Webアプリサーバー / 代替HTTPポート。" },
+    { name: "Alt HTTPS", port: 8443, desc: "代替HTTPS。Cloudflare等でも許可されるポート。" },
+    { name: "PHP-FPM", port: 9000, desc: "Nginx等と連携するPHPのFastCGIプロセスマネージャー。" },
+    { name: "Elasticsearch", port: 9200, desc: "高速な全文検索エンジン（レジスタードポート）。" },
+    { name: "Memcached", port: 11211, desc: "シンプルで高速な分散メモリキャッシュ。" },
+    { name: "Minecraft BE", port: 19132, desc: "Minecraft 統合版のマルチプレイサーバー。" },
+    { name: "Minecraft Java", port: 25565, desc: "Minecraft Java Editionのマルチプレイサーバー。" },
+    { name: "Source Engine", port: 27015, desc: "Steam系ゲーム(CS:GO等)のサーバーポート。" },
+    { name: "MongoDB", port: 27017, desc: "代表的なNoSQLデータベース。" }
+];
+
+let state = {
+    mode: 'normal', maxStages: 10, currentPool: [], remainingQuestions: [],
+    stage: 1, score: 0, combo: 0, hp: 3, 
+    isAnswered: false, isExplaining: false, 
+    currentTarget: null, currentOptions: []
+};
+let timerAnim;
+let scoreObj = { val: 0 };
+
+window.onload = showMenu;
+
+function showMenu() {
+    document.getElementById('game-ui').style.display = 'none';
+    Swal.fire({
+        title: 'SYSTEM BOOT SEQUENCE',
+        html: `
+            <div style="text-align:left;">
+                <label class="setup-label">[ 1. SELECT MODE ]</label>
+                <select id="sel-mode" class="setup-select">
+                    <option value="normal">NORMAL (0-1023: 有名なウェルノウンのみ)</option>
+                    <option value="hard">HARD (0-1023: マイナーなウェルノウンも含む)</option>
+                    <option value="omake">ALL / OMAKE (0-65535: 開発・DB・ゲーム全て)</option>
+                </select>
+
+                <label class="setup-label">[ 2. QUESTIONS ]</label>
+                <select id="sel-count" class="setup-select">
+                    <option value="10">10 STAGES (Quick)</option>
+                    <option value="20">20 STAGES (Standard)</option>
+                    <option value="30">30 STAGES (Deep Hack)</option>
+                    <option value="endless">ENDLESS (Survival - HP尽きるまで)</option>
+                </select>
+            </div>
+        `,
+        confirmButtonText: 'INITIATE HACK',
+        background: '#0a0a0a', color: '#00ff41',
+        confirmButtonColor: 'var(--primary-dim)',
+        customClass: { popup: 'swal-cyber' },
+        allowOutsideClick: false,
+        preConfirm: () => {
+            return { mode: document.getElementById('sel-mode').value, count: document.getElementById('sel-count').value }
+        }
+    }).then((res) => {
+        if(res.isConfirmed) bootGame(res.value.mode, res.value.count);
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    if (state.isExplaining) proceedToNextStage();
+    else if (!state.isAnswered && document.getElementById('game-ui').style.display === 'block') {
+        const keyMap = {'1':0, '2':1, '3':2, '4':3};
+        if(keyMap[e.key] !== undefined) selectAnswer(keyMap[e.key]);
+    }
+});
+
+function bootGame(mode, countStr) {
+    initAudio();
+    document.getElementById('game-ui').style.display = 'block';
+    
+    state.mode = mode;
+    if(mode === 'normal') { state.currentPool = [...dbWellKnownFamous]; document.getElementById('mode-display').style.color = "var(--primary)"; }
+    if(mode === 'hard') { state.currentPool = [...dbWellKnownFamous, ...dbWellKnownMinor]; document.getElementById('mode-display').style.color = "#ffaa00"; }
+    if(mode === 'omake') { state.currentPool = [...dbWellKnownFamous, ...dbWellKnownMinor, ...dbRegisteredAndDev]; document.getElementById('mode-display').style.color = "var(--secondary)"; }
+    
+    if (countStr === 'endless') {
+        state.maxStages = Infinity;
+    } else {
+        state.maxStages = parseInt(countStr);
+    }
+
+    document.getElementById('mode-display').textContent = mode.toUpperCase();
+    document.getElementById('max-stages').textContent = state.maxStages === Infinity ? '∞' : state.maxStages;
+
+    document.querySelectorAll('.btn-option').forEach(btn => btn.addEventListener('mouseenter', sfx.hover));
+    
+    state.remainingQuestions = [...state.currentPool].sort(() => 0.5 - Math.random());
+    state.stage = 1; state.score = 0; state.combo = 0; state.hp = 3; 
+    state.isAnswered = false; state.isExplaining = false;
+    scoreObj.val = 0;
+    
+    updateHUD(); loadStage();
+}
+
+function loadStage() {
+    state.isAnswered = false; state.isExplaining = false;
+    if(timerAnim) timerAnim.pause();
+    
+    document.getElementById('options-container').style.display = 'grid';
+    document.getElementById('explanation-panel').style.display = 'none';
+    document.getElementById('timer-bar').style.width = '100%';
+    document.getElementById('timer-bar').style.backgroundColor = 'var(--primary)';
+    
+    document.querySelectorAll('.btn-option').forEach(btn => {
+        btn.style.backgroundColor = 'transparent'; btn.style.borderColor = 'var(--primary-dim)'; btn.style.color = 'var(--text-main)';
+    });
+
+    // 問題が枯渇した場合（エンドレスモード等）はプールを再シャッフル
+    if (state.remainingQuestions.length === 0) {
+        state.remainingQuestions = [...state.currentPool].sort(() => 0.5 - Math.random());
+    }
+    state.currentTarget = state.remainingQuestions.pop();
+    
+    const isReverse = Math.random() < 0.35;
+    const qText = document.getElementById('question-text');
+    const tDisplay = document.getElementById('target-display');
+    
+    if (isReverse) {
+        qText.textContent = "Target Port > Identify Protocol";
+        tDisplay.textContent = ":" + state.currentTarget.port;
+        tDisplay.className = 'target-name reverse-mode';
+        generateOptions(state.currentTarget.name, true);
+    } else {
+        qText.textContent = "Target Protocol > Identify Port";
+        tDisplay.textContent = state.currentTarget.name;
+        tDisplay.className = 'target-name';
+        generateOptions(state.currentTarget.port, false);
+    }
+
+    // タイマー短縮（難易度やステージ進行に合わせる。ただし最短3秒でストップ）
+    const decay = state.stage * 150;
+    const timeLimit = Math.max(3000, 10000 - decay);
+    startTimer(timeLimit);
+}
+
+function generateOptions(correctVal, isReverse) {
+    const options = [correctVal];
+    while (options.length < 4) {
+        const rnd = state.currentPool[Math.floor(Math.random() * state.currentPool.length)];
+        const candidate = isReverse ? rnd.name : rnd.port;
+        if (!options.includes(candidate)) options.push(candidate);
+    }
+    state.currentOptions = options.sort(() => 0.5 - Math.random());
+    for(let i=0; i<4; i++) document.getElementById('btn-'+i).textContent = state.currentOptions[i];
+}
+
+function startTimer(duration) {
+    timerAnim = anime({
+        targets: '#timer-bar', width: '0%', duration: duration, easing: 'linear',
+        update: function(anim) { if(anim.progress > 70) document.getElementById('timer-bar').style.backgroundColor = 'var(--danger)'; },
+        complete: function() { handleWrongAnswer(null); }
+    });
+}
+
+function selectAnswer(index) {
+    if(state.isAnswered) return;
+    state.isAnswered = true; timerAnim.pause();
+    const selected = state.currentOptions[index];
+    const btn = document.getElementById('btn-'+index);
+    const isCorrect = (selected === state.currentTarget.name || selected === state.currentTarget.port);
+    if(isCorrect) handleCorrect(btn); else handleWrongAnswer(btn);
+}
+
+function handleCorrect(btn) {
+    state.combo++;
+    const modeMult = state.mode === 'omake' ? 1.5 : (state.mode === 'hard' ? 1.2 : 1.0);
+    const timeRemains = parseFloat(document.getElementById('timer-bar').style.width) / 100;
+    const earned = Math.floor(((100 + (timeRemains * 200)) * (1 + state.combo * 0.2)) * modeMult);
+    
+    animateScore(earned); showFloatingText(`+${earned}`, btn, 'var(--primary)');
+    btn.style.backgroundColor = 'var(--primary)'; btn.style.color = '#000';
+    
+    if(state.combo > 0 && state.combo % 3 === 0) {
+        sfx.combo(); fireConfetti(); showFloatingText(`COMBO x${state.combo}!`, document.getElementById('combo'), 'var(--secondary)');
+    } else sfx.correct();
+    
+    setTimeout(showExplanation, 500);
+}
+
+function handleWrongAnswer(btn) {
+    state.combo = 0; state.hp--; sfx.wrong(); updateHUD();
+    anime({ targets: '#game-ui', translateX: [0, -15, 15, -15, 15, 0], duration: 400, easing: 'easeInOutQuad' });
+
+    if(btn) { btn.style.backgroundColor = 'var(--danger)'; showFloatingText('DENIED', btn, 'var(--danger)'); } 
+    else { showFloatingText('TIMEOUT', document.getElementById('timer-bar'), 'var(--danger)'); }
+
+    for(let i=0; i<4; i++) {
+        if(state.currentOptions[i] === state.currentTarget.name || state.currentOptions[i] === state.currentTarget.port) {
+            document.getElementById('btn-'+i).style.borderColor = 'var(--primary)'; document.getElementById('btn-'+i).style.color = 'var(--primary)';
+        }
+    }
+    setTimeout(showExplanation, 600);
+}
+
+function showExplanation() {
+    state.isExplaining = true; document.getElementById('options-container').style.display = 'none';
+    const expPanel = document.getElementById('explanation-panel'); expPanel.style.display = 'flex';
+    document.getElementById('exp-title').textContent = `${state.currentTarget.name} (Port ${state.currentTarget.port})`;
+    document.getElementById('exp-desc').textContent = state.currentTarget.desc;
+    anime({ targets: expPanel, opacity: [0, 1], translateY: [20, 0], duration: 300, easing: 'easeOutQuad' });
+}
+
+function proceedToNextStage() {
+    if(!state.isExplaining) return;
+    state.isExplaining = false;
+    
+    if(state.hp <= 0) showGameOver();
+    else {
+        state.stage++;
+        if(state.stage > state.maxStages) showGameClear();
+        else { updateHUD(); loadStage(); }
+    }
+}
+
+function updateHUD() {
+    document.getElementById('stage').textContent = state.maxStages === Infinity ? state.stage : Math.min(state.stage, state.maxStages);
+    document.getElementById('combo').textContent = state.combo;
+    document.getElementById('hp').textContent = '♥'.repeat(state.hp) + '♡'.repeat(3 - state.hp);
+}
+
+function animateScore(addVal) {
+    state.score += addVal;
+    anime({ targets: scoreObj, val: state.score, round: 1, duration: 1000, easing: 'easeOutExpo', update: () => { document.getElementById('score').textContent = scoreObj.val; } });
+}
+
+function showFloatingText(text, targetEl, color) {
+    const rect = targetEl.getBoundingClientRect(); const floatEl = document.createElement('div');
+    floatEl.className = 'floating-score'; floatEl.textContent = text;
+    floatEl.style.left = (rect.left + rect.width / 2 - 40) + 'px'; floatEl.style.top = rect.top + 'px';
+    floatEl.style.color = color; document.body.appendChild(floatEl);
+    anime({ targets: floatEl, translateY: -80, opacity: [1, 0], duration: 1200, easing: 'easeOutCubic', complete: () => floatEl.remove() });
+}
+
+function fireConfetti() { confetti({ particleCount: 80, spread: 70, origin: { y: 0.8 }, colors: ['#00ff41', '#00ffff', '#ffffff'], disableForReducedMotion: true }); }
+
+function showGameOver() {
+    sfx.gameover();
+    Swal.fire({
+        title: 'HACK FAILED',
+        html: `SYSTEM LOCKED OUT<br><br>MODE: ${state.mode.toUpperCase()}<br>REACHED STAGE: ${state.stage}<br>FINAL SCORE: <b style="color:var(--danger)">${state.score}</b>`,
+        background: '#111', color: 'var(--danger)', confirmButtonColor: 'var(--danger)', confirmButtonText: 'RETURN TO MENU',
+        customClass: { popup: 'swal-cyber' }
+    }).then(showMenu);
+}
+
+function showGameClear() {
+    sfx.combo(); let burst = 3;
+    const cInterval = setInterval(() => { fireConfetti(); burst--; if(burst === 0) clearInterval(cInterval); }, 300);
+    Swal.fire({
+        title: 'ACCESS GRANTED!',
+        html: `ALL SECURITY CLEARED.<br><br>MODE: ${state.mode.toUpperCase()}<br>FINAL SCORE: <b style="color:var(--primary); font-size:24px;">${state.score}</b>`,
+        background: '#111', color: 'var(--primary)', confirmButtonColor: 'var(--primary-dim)', confirmButtonText: 'RETURN TO MENU',
+        customClass: { popup: 'swal-cyber' }
+    }).then(showMenu);
+}
