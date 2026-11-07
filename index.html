@@ -5,15 +5,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>PORT_HACKER</title>
         
+        <!-- サイバーパンク風フォントとカスタムCSS -->
         <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
         <link href="style.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        
+        <!-- 演出・UI用外部ライブラリ -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- スタート画面・結果発表ダイアログ用 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script> <!-- 滑らかなUIアニメーション・画面揺れ用 -->
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> <!-- コンボ・クリア時の紙吹雪用 -->
     </head>
     <body>
     
+        <!-- ゲームプレイ画面のメインコンテナ（初期やメニュー画面では非表示） -->
         <div class="container" id="game-ui">
+            
+            <!-- HUD (ヘッドアップディスプレイ): プレイヤーのステータス情報 -->
             <div class="hud">
                 <div>MODE: <span id="mode-display">NORMAL</span></div>
                 <div>STAGE <span id="stage">1</span>/<span id="max-stages">10</span></div>
@@ -22,17 +28,29 @@
                 <div>SCORE <span id="score">0</span></div>
             </div>
     
-            <div class="timer-bar-container"><div id="timer-bar" class="timer-bar"></div></div>
+            <!-- 制限時間を示すプログレスバー -->
+            <div class="timer-bar-container">
+                <div id="timer-bar" class="timer-bar"></div>
+            </div>
+            
+            <!-- 出題エリア -->
             <div class="quiz-box">
+                <!-- 問題の指示（プロトコルを当てるか、ポートを当てるか） -->
                 <div class="question-label" id="question-text">Target Protocol > Identify Port</div>
+                <!-- 対象のプロトコル名、またはポート番号 -->
                 <div class="target-name" id="target-display">HTTP</div>
             </div>
+            
+            <!-- 選択肢のボタングリッド -->
             <div class="options-grid" id="options-container">
+                <!-- data-key属性はキーボードショートカット(1〜4)のガイド表示用 -->
                 <button class="btn-option" data-key="1" id="btn-0" onclick="selectAnswer(0)"></button>
                 <button class="btn-option" data-key="2" id="btn-1" onclick="selectAnswer(1)"></button>
                 <button class="btn-option" data-key="3" id="btn-2" onclick="selectAnswer(2)"></button>
                 <button class="btn-option" data-key="4" id="btn-3" onclick="selectAnswer(3)"></button>
             </div>
+            
+            <!-- 解答後に表示される解説パネル（画面クリックで次へ進行） -->
             <div class="explanation-panel" id="explanation-panel" onclick="proceedToNextStage()">
                 <div class="exp-title" id="exp-title">HTTP (80)</div>
                 <div class="exp-desc" id="exp-desc">ここにプロトコルの解説が入ります。</div>
@@ -40,6 +58,7 @@
             </div>
         </div>
     
+        <!-- ゲームのメインロジック (タイマー、スコア計算、問題制御など) -->
         <script src="main.js"></script>
     </body>
 </html>
