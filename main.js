@@ -22,69 +22,9 @@ const sfx = {
 
 // --- 厳密なポート番号データベース ---
 
-// 1. NORMAL: ウェルノウンポート(0-1023) 非常に有名なもの
-const dbWellKnownFamous = [
-    { name: "FTP (Data)", port: 20, desc: "ファイル転送のデータ通信用（ウェルノウン）。" },
-    { name: "FTP (Control)", port: 21, desc: "ファイル転送の制御コマンド用（ウェルノウン）。" },
-    { name: "SSH", port: 22, desc: "安全なリモートログイン（ウェルノウン）。Github接続等でも活躍。" },
-    { name: "Telnet", port: 23, desc: "非暗号化リモートログイン（ウェルノウン）。現在は非推奨。" },
-    { name: "SMTP", port: 25, desc: "メールの送信・転送（ウェルノウン）。" },
-    { name: "DNS", port: 53, desc: "名前解決システム。UDP/TCP両方使用（ウェルノウン）。" },
-    { name: "HTTP", port: 80, desc: "Webサイト閲覧の基本ポート（ウェルノウン）。" },
-    { name: "POP3", port: 110, desc: "メール受信（ウェルノウン）。" },
-    { name: "NTP", port: 123, desc: "ネットワーク上の時刻同期（ウェルノウン）。" },
-    { name: "IMAP", port: 143, desc: "サーバー上でのメール管理（ウェルノウン）。" },
-    { name: "HTTPS", port: 443, desc: "暗号化された安全なWebサイト閲覧（ウェルノウン）。" },
-    { name: "SMB", port: 445, desc: "Windowsのファイル・プリンタ共有（ウェルノウン）。" }
-];
-
-// 2. HARD拡張: ウェルノウンポート(0-1023) マイナー/インフラ系
-const dbWellKnownMinor = [
-    { name: "DHCP (Server)", port: 67, desc: "IPアドレス自動割り当てのサーバー側（ウェルノウン）。" },
-    { name: "DHCP (Client)", port: 68, desc: "IPアドレスを受け取るクライアント側（ウェルノウン）。" },
-    { name: "TFTP", port: 69, desc: "認証機能がない軽量ファイル転送（ウェルノウン）。ルーター設定等に。" },
-    { name: "Finger", port: 79, desc: "ユーザー情報を提供する古いプロトコル（ウェルノウン）。" },
-    { name: "Kerberos", port: 88, desc: "ネットワーク認証システム（ウェルノウン）。Active Directoryで使用。" },
-    { name: "NetBIOS (Name)", port: 137, desc: "Windowsのレガシーな名前解決（ウェルノウン）。" },
-    { name: "SNMP", port: 161, desc: "ネットワーク機器の監視・管理（ウェルノウン）。" },
-    { name: "SNMP Trap", port: 162, desc: "ネットワーク機器からの異常通知（ウェルノウン）。" },
-    { name: "BGP", port: 179, desc: "インターネットのルーティングプロトコル（ウェルノウン）。" },
-    { name: "LDAP", port: 389, desc: "ディレクトリサービスへのアクセス（ウェルノウン）。" },
-    { name: "SMTPS", port: 465, desc: "暗号化されたメール送信（ウェルノウン）。" },
-    { name: "ISAKMP (IPsec)", port: 500, desc: "VPN(IPsec)の鍵交換で使用（ウェルノウン）。" },
-    { name: "Syslog", port: 514, desc: "ログメッセージのネットワーク転送（ウェルノウン）。" },
-    { name: "Submission", port: 587, desc: "メール送信時のユーザー認証付きポート（ウェルノウン）。" },
-    { name: "LDAPS", port: 636, desc: "暗号化されたLDAP（ウェルノウン）。" },
-    { name: "FTPS", port: 990, desc: "暗号化されたFTP通信（ウェルノウン）。" },
-    { name: "IMAPS", port: 993, desc: "暗号化されたIMAP通信（ウェルノウン）。" },
-    { name: "POP3S", port: 995, desc: "暗号化されたPOP3通信（ウェルノウン）。" }
-];
-
-// 3. OMAKE拡張: レジスタードポート(1024-49151) ＋ 動的・プライベート
-const dbRegisteredAndDev = [
-    { name: "OpenVPN", port: 1194, desc: "VPN接続用（レジスタードポート）。" },
-    { name: "SQL Server", port: 1433, desc: "Microsoft SQL Server（レジスタードポート）。" },
-    { name: "Oracle DB", port: 1521, desc: "Oracle Database（レジスタードポート）。" },
-    { name: "Docker API", port: 2375, desc: "Dockerデーモンを外部操作する非暗号化API。" },
-    { name: "React/Next.js", port: 3000, desc: "Node.js系フレームワークのローカル開発デフォルト。" },
-    { name: "MySQL", port: 3306, desc: "オープンソースRDBMSの代表格（レジスタードポート）。" },
-    { name: "RDP", port: 3389, desc: "Windowsリモートデスクトップ（レジスタードポート）。" },
-    { name: "Vite", port: 5173, desc: "高速フロントエンドビルドツールViteのデフォルト。" },
-    { name: "PostgreSQL", port: 5432, desc: "高度な機能を持つRDBMS（レジスタードポート）。" },
-    { name: "VNC", port: 5900, desc: "クロスプラットフォームな画面共有（レジスタードポート）。" },
-    { name: "Redis", port: 6379, desc: "高速なインメモリKVS（レジスタードポート）。" },
-    { name: "Terraria", port: 7777, desc: "2Dサンドボックスゲーム Terrariaのマルチサーバー。" },
-    { name: "Laravel", port: 8000, desc: "PHPフレームワーク Laravel の artisan serve デフォルト。" },
-    { name: "Tomcat", port: 8080, desc: "Java Webアプリサーバー / 代替HTTPポート。" },
-    { name: "Alt HTTPS", port: 8443, desc: "代替HTTPS。Cloudflare等でも許可されるポート。" },
-    { name: "PHP-FPM", port: 9000, desc: "Nginx等と連携するPHPのFastCGIプロセスマネージャー。" },
-    { name: "Elasticsearch", port: 9200, desc: "高速な全文検索エンジン（レジスタードポート）。" },
-    { name: "Memcached", port: 11211, desc: "シンプルで高速な分散メモリキャッシュ。" },
-    { name: "Minecraft BE", port: 19132, desc: "Minecraft 統合版のマルチプレイサーバー。" },
-    { name: "Minecraft Java", port: 25565, desc: "Minecraft Java Editionのマルチプレイサーバー。" },
-    { name: "Source Engine", port: 27015, desc: "Steam系ゲーム(CS:GO等)のサーバーポート。" },
-    { name: "MongoDB", port: 27017, desc: "代表的なNoSQLデータベース。" }
-];
+let dbWellKnownFamous = [];
+let dbWellKnownMinor = [];
+let dbRegisteredAndDev = [];
 
 let state = {
     mode: 'normal', maxStages: 10, currentPool: [], remainingQuestions: [],
@@ -95,7 +35,29 @@ let state = {
 let timerAnim;
 let scoreObj = { val: 0 };
 
-window.onload = showMenu;
+window.onload = async () => {
+    try {
+        const response = await fetch('ports.json');
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        dbWellKnownFamous = data.dbWellKnownFamous;
+        dbWellKnownMinor = data.dbWellKnownMinor;
+        dbRegisteredAndDev = data.dbRegisteredAndDev;
+        
+        showMenu(); // 読み込み完了後にメニュー表示
+    } catch (error) {
+        console.error('Failed to load port database:', error);
+        Swal.fire({
+            title: 'SYSTEM ERROR',
+            text: 'データベース (ports.json) の読み込みに失敗しました。ローカルサーバー環境で実行してください。',
+            icon: 'error',
+            background: '#0a0a0a', color: '#ff003c',
+            confirmButtonColor: 'var(--primary-dim)',
+            customClass: { popup: 'swal-cyber' }
+        });
+    }
+};
 
 function showMenu() {
     document.getElementById('game-ui').style.display = 'none';
