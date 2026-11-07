@@ -1,45 +1,45 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PORT_HACKER</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PORT_HACKER</title>
+        
+        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+        <link href="style.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    </head>
+    <body>
     
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-</head>
-<body>
-
-    <div class="container" id="game-ui">
-        <div class="hud">
-            <div>MODE: <span id="mode-display">NORMAL</span></div>
-            <div>STAGE <span id="stage">1</span>/<span id="max-stages">10</span></div>
-            <div>COMBO <span id="combo">0</span></div>
-            <div>HP <span id="hp">♥♥♥</span></div>
-            <div>SCORE <span id="score">0</span></div>
+        <div class="container" id="game-ui">
+            <div class="hud">
+                <div>MODE: <span id="mode-display">NORMAL</span></div>
+                <div>STAGE <span id="stage">1</span>/<span id="max-stages">10</span></div>
+                <div>COMBO <span id="combo">0</span></div>
+                <div>HP <span id="hp">♥♥♥</span></div>
+                <div>SCORE <span id="score">0</span></div>
+            </div>
+    
+            <div class="timer-bar-container"><div id="timer-bar" class="timer-bar"></div></div>
+            <div class="quiz-box">
+                <div class="question-label" id="question-text">Target Protocol > Identify Port</div>
+                <div class="target-name" id="target-display">HTTP</div>
+            </div>
+            <div class="options-grid" id="options-container">
+                <button class="btn-option" data-key="1" id="btn-0" onclick="selectAnswer(0)"></button>
+                <button class="btn-option" data-key="2" id="btn-1" onclick="selectAnswer(1)"></button>
+                <button class="btn-option" data-key="3" id="btn-2" onclick="selectAnswer(2)"></button>
+                <button class="btn-option" data-key="4" id="btn-3" onclick="selectAnswer(3)"></button>
+            </div>
+            <div class="explanation-panel" id="explanation-panel" onclick="proceedToNextStage()">
+                <div class="exp-title" id="exp-title">HTTP (80)</div>
+                <div class="exp-desc" id="exp-desc">ここにプロトコルの解説が入ります。</div>
+                <div class="exp-prompt">PRESS ANY KEY OR CLICK TO CONTINUE ▶</div>
+            </div>
         </div>
-
-        <div class="timer-bar-container"><div id="timer-bar" class="timer-bar"></div></div>
-        <div class="quiz-box">
-            <div class="question-label" id="question-text">Target Protocol > Identify Port</div>
-            <div class="target-name" id="target-display">HTTP</div>
-        </div>
-        <div class="options-grid" id="options-container">
-            <button class="btn-option" data-key="1" id="btn-0" onclick="selectAnswer(0)"></button>
-            <button class="btn-option" data-key="2" id="btn-1" onclick="selectAnswer(1)"></button>
-            <button class="btn-option" data-key="3" id="btn-2" onclick="selectAnswer(2)"></button>
-            <button class="btn-option" data-key="4" id="btn-3" onclick="selectAnswer(3)"></button>
-        </div>
-        <div class="explanation-panel" id="explanation-panel" onclick="proceedToNextStage()">
-            <div class="exp-title" id="exp-title">HTTP (80)</div>
-            <div class="exp-desc" id="exp-desc">ここにプロトコルの解説が入ります。</div>
-            <div class="exp-prompt">PRESS ANY KEY OR CLICK TO CONTINUE ▶</div>
-        </div>
-    </div>
-
-    <script src="main.js"></script>
-</body>
+    
+        <script src="main.js"></script>
+    </body>
 </html>
