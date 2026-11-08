@@ -1,4 +1,9 @@
 # PORT_HACKER — game controller
+#
+# Responsibilities are grouped in this file: shared state/helpers, audio and
+# data loading, screen/stage lifecycle, answer evaluation, then event wiring.
+# HTML IDs are the UI contract; game rules should not depend on CSS.
+# PORT_HACKER — game controller
 # Single-file CoffeeScript application. Game rules and presentation stay explicit.
 
 audioContext = null
@@ -30,6 +35,8 @@ $ = (id) -> document.getElementById(id)
 
 randomItem = (items) -> items[Math.floor(Math.random() * items.length)]
 
+# Fisher–Yates shuffle. Work on a copy so the original question pool stays intact.
+shuffle = (items) ->
 shuffle = (items) ->
     result = [...items]
     for i in [result.length - 1..1]
@@ -37,6 +44,8 @@ shuffle = (items) ->
         [result[i], result[j]] = [result[j], result[i]]
     result
 
+# Synthesize short effects with Web Audio; no audio asset downloads are needed.
+playTone = (frequency, waveform = 'sine', duration = 0.12, volume = 0.08) ->
 playTone = (frequency, waveform = 'sine', duration = 0.12, volume = 0.08) ->
     return unless audioContext?
     oscillator = audioContext.createOscillator()
@@ -74,6 +83,8 @@ initAudio = ->
     audioContext ?= new AudioContextClass()
     audioContext.resume() if audioContext.state is 'suspended'
 
+# Build each difficulty pool from ports.json. Higher modes include the easier pools.
+loadDatabase = ->
 loadDatabase = ->
     try
         response = await fetch('ports.json')
@@ -100,6 +111,8 @@ renderMenu = ->
     $('game-screen').hidden = true
     $('menu-screen').classList.add('screen-enter')
 
+# Reset run-specific values together before entering the first stage.
+startGame = ->
 startGame = ->
     initAudio()
     state.mode = $('mode-select').value
@@ -127,12 +140,16 @@ startGame = ->
     updateHud()
     loadStage()
 
+# Cancel both the animated countdown and delayed feedback to prevent stale callbacks.
+stopStageTimers = ->
 stopStageTimers = ->
     state.timer?.pause()
     clearTimeout(state.answerDelay) if state.answerDelay?
     state.timer = null
     state.answerDelay = null
 
+# Consume a shuffled queue without repeating questions until the pool is exhausted.
+loadStage = ->
 loadStage = ->
     return unless state.screen is 'game'
     stopStageTimers()
@@ -148,6 +165,8 @@ loadStage = ->
 
     state.queue = shuffle(state.pool) if state.queue.length is 0
     state.target = state.queue.pop()
+    # Some rounds reverse the prompt: identify the protocol from its port.
+    state.reverse = Math.random() < 0.35
     state.reverse = Math.random() < 0.35
 
     if state.reverse
@@ -172,6 +191,8 @@ loadStage = ->
         complete: ->
             submitAnswer(null) unless state.answered
 
+# Generate four choices: the correct answer plus three shuffled distractors.
+createOptions = ->
 createOptions = ->
     correct = if state.reverse then state.target.name else state.target.port
     candidates = state.pool.map (entry) -> if state.reverse then entry.name else entry.port
@@ -191,6 +212,9 @@ updateHud = ->
     $('hp-label').textContent = '♥'.repeat(state.hp) + '♡'.repeat(3 - state.hp)
     $('hp-label').setAttribute('aria-label', state.hp + ' lives remaining')
 
+# Mouse, keyboard, and timeout all enter through this function.
+# A null index means the timer expired without an answer.
+submitAnswer = (index) ->
 submitAnswer = (index) ->
     return unless state.screen is 'game'
     return if state.answered
@@ -212,6 +236,8 @@ submitAnswer = (index) ->
     else
         handleWrong(index)
 
+# Reward fast answers and consecutive correct responses with a combo multiplier.
+handleCorrect = (index) ->
 handleCorrect = (index) ->
     state.combo++
     multiplier = if state.mode is 'omake' then 1.5 else if state.mode is 'hard' then 1.2 else 1
@@ -236,6 +262,8 @@ handleCorrect = (index) ->
 
     state.answerDelay = setTimeout(showExplanation, 450)
 
+# A miss breaks the combo and costs one life; timeout has no selected index.
+handleWrong = (index) ->
 handleWrong = (index) ->
     state.combo = 0
     state.hp--
@@ -249,6 +277,8 @@ handleWrong = (index) ->
     updateHud()
     state.answerDelay = setTimeout(showExplanation, 600)
 
+# Reveal the answer and pause progression until the player is ready to continue.
+showExplanation = ->
 showExplanation = ->
     return unless state.screen is 'game'
     state.explaining = true
@@ -264,6 +294,8 @@ showExplanation = ->
         duration: 220
         easing: 'easeOutQuad'
 
+# Continue after reading the explanation, or end the run at a terminal condition.
+advanceStage = ->
 advanceStage = ->
     return unless state.explaining
     state.explaining = false
@@ -276,6 +308,8 @@ advanceStage = ->
         else
             loadStage()
 
+# The result is presented in a modal; confirming returns to the menu.
+finishGame = (cleared) ->
 finishGame = (cleared) ->
     state.screen = 'result'
     stopStageTimers()
@@ -304,6 +338,8 @@ finishGame = (cleared) ->
         allowOutsideClick: false
     .then(renderMenu)
 
+# Register events once. Delegation avoids recreating option-button listeners
+# on every stage and every game session.
 # UI event wiring is performed once, not every time a new run starts.
 document.addEventListener 'DOMContentLoaded', ->
     $('start-button').addEventListener 'click', startGame
