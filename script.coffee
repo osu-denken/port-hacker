@@ -122,7 +122,9 @@ showMenu = ->
         background: '#0a0a0a'
         color: '#00ff41'
         confirmButtonColor: 'var(--primary-dim)'
-        customClass: popup: 'swal-cyber'
+        customClass:
+            popup: 'swal-cyber'
+            confirmButton: 'btn-hack'
         allowOutsideClick: false
         preConfirm: ->
             mode: document.getElementById('sel-mode').value
