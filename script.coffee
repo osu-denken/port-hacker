@@ -58,7 +58,7 @@ state =
     currentTarget: null
     currentOptions: []
 
-timerAnim = null              # Anime.jsによるタイマーアニメーションのインスタンス
+timerAnim = null # Anime.jsによるタイマーアニメーションのインスタンス
 scoreObj = val: 0
 
 # 配列をその場で Fisher-Yates シャッフルする
@@ -69,10 +69,11 @@ shuffle = (items) ->
     items             # スコアのカウントアップ演出用オブジェクト
 
 
-# --- アプリケーション起動時の処理 (DOMロード完了 & ports.jsonの読み込み) ---
+# --- アプリケーション起動時の処理 (DOMロード完了) ---
 window.onload = ->
     do ->
         try
+            # ports.jsonの読み込み
             response = await fetch('ports.json')
             throw new Error('Network response was not ok') unless response.ok
             
