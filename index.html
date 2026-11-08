@@ -1,65 +1,92 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>PORT_HACKER</title>
-        
-        <!-- サイバーパンク風フォントとカスタムCSS -->
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-        <link href="style.css" rel="stylesheet">
-        
-        <!-- 演出・UI用外部ライブラリ -->
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- スタート画面・結果発表ダイアログ用 -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script> <!-- 滑らかなUIアニメーション・画面揺れ用 -->
-        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> <!-- コンボ・クリア時の紙吹雪用 -->
-        
-    </head>
-    <body>
-    
-        <!-- ゲームプレイ画面のメインコンテナ（初期やメニュー画面では非表示） -->
-        <div class="container" id="game-ui">
-            
-            <!-- HUD (ヘッドアップディスプレイ): プレイヤーのステータス情報 -->
-            <div class="hud">
-                <div>MODE: <span id="mode-display">NORMAL</span></div>
-                <div>STAGE <span id="stage">1</span>/<span id="max-stages">10</span></div>
-                <div>COMBO <span id="combo">0</span></div>
-                <div>HP <span id="hp">♥♥♥</span></div>
-                <div>SCORE <span id="score">0</span></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101820">
+    <meta name="description" content="ポート番号とプロトコルをハックして覚えるネットワーククイズ。">
+    <title>PORT_HACKER — Network Port Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script defer src="output.js"></script>
+</head>
+<body>
+    <main class="app-shell">
+        <header class="site-header">
+            <a class="brand" href="#" aria-label="PORT HACKER home"><span class="brand-mark">PH</span><span>PORT<span class="brand-accent">_HACKER</span></span></a>
+            <span class="header-status"><span class="status-dot"></span> NETWORK TRAINING SIMULATOR</span>
+        </header>
+
+        <section id="menu-screen" class="screen menu-screen">
+            <div class="eyebrow">01 / TRAINING ENVIRONMENT</div>
+            <h1>Know your ports.<br><span>Own the network.</span></h1>
+            <p class="intro">ポート番号とプロトコルの対応を、クイズ形式でハックしよう。</p>
+
+            <div class="setup-panel">
+                <label class="field">
+                    <span class="field-label">DIFFICULTY / MODE</span>
+                    <select id="mode-select">
+                        <option value="normal">NORMAL — よく使う Well-known</option>
+                        <option value="hard">HARD — Well-known 全般</option>
+                        <option value="omake">OMAKE — Registered / Dev / Game</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">MISSION LENGTH</span>
+                    <select id="count-select">
+                        <option value="10">10 STAGES / QUICK RUN</option>
+                        <option value="20">20 STAGES / STANDARD</option>
+                        <option value="30">30 STAGES / DEEP DIVE</option>
+                        <option value="endless">ENDLESS / SURVIVAL</option>
+                    </select>
+                </label>
+                <button id="start-button" class="primary-button" type="button">START MISSION <span aria-hidden="true">↗</span></button>
             </div>
-    
-            <!-- 制限時間を示すプログレスバー -->
-            <div class="timer-bar-container">
-                <div id="timer-bar" class="timer-bar"></div>
+            <div class="menu-foot"><span>INPUT: KEYBOARD 1—4 OR MOUSE</span><span>READY WHEN YOU ARE</span></div>
+        </section>
+
+        <section id="game-screen" class="screen game-screen" hidden>
+            <div class="game-topline">
+                <div><div class="eyebrow">LIVE SESSION</div><span id="mode-label" class="mode-chip" data-mode="normal">NORMAL</span></div>
+                <button id="back-button" class="text-button" type="button">← EXIT SESSION</button>
             </div>
-            
-            <!-- 出題エリア -->
-            <div class="quiz-box">
-                <!-- 問題の指示（プロトコルを当てるか、ポートを当てるか） -->
-                <div class="question-label" id="question-text">Target Protocol > Identify Port</div>
-                <!-- 対象のプロトコル名、またはポート番号 -->
-                <div class="target-name" id="target-display">HTTP</div>
+
+            <div class="hud" aria-label="Game status">
+                <div class="hud-item"><span class="hud-label">STAGE</span><strong><span id="stage-label">1</span><small> / <span id="max-stage-label">10</span></small></strong></div>
+                <div class="hud-item"><span class="hud-label">COMBO</span><strong id="combo-label">0</strong></div>
+                <div class="hud-item"><span class="hud-label">INTEGRITY</span><strong id="hp-label" aria-label="3 lives remaining">♥♥♥</strong></div>
+                <div class="hud-item score-item"><span class="hud-label">SCORE</span><strong id="score-label">0</strong></div>
             </div>
-            
-            <!-- 選択肢のボタングリッド -->
-            <div class="options-grid" id="options-container">
-                <!-- data-key属性はキーボードショートカット(1〜4)のガイド表示用 -->
-                <button class="btn-option" data-key="1" id="btn-0" onclick="selectAnswer(0)"></button>
-                <button class="btn-option" data-key="2" id="btn-1" onclick="selectAnswer(1)"></button>
-                <button class="btn-option" data-key="3" id="btn-2" onclick="selectAnswer(2)"></button>
-                <button class="btn-option" data-key="4" id="btn-3" onclick="selectAnswer(3)"></button>
+
+            <div class="timer-track" role="progressbar" aria-label="Time remaining"><div id="timer-fill" class="timer-fill"></div></div>
+            <article id="question-card" class="question-card">
+                <div class="question-meta"><span class="live-indicator"></span> INCOMING PACKET</div>
+                <p id="question-direction" class="question-direction">IDENTIFY THE PORT</p>
+                <div id="target" class="target">HTTP</div>
+                <div id="answer-feedback" class="feedback" aria-live="polite"></div>
+            </article>
+
+            <div id="options" class="options-grid">
+                <button class="answer-option" type="button" data-option="0"><span class="key-hint">1</span><span id="option-0">80</span></button>
+                <button class="answer-option" type="button" data-option="1"><span class="key-hint">2</span><span id="option-1">443</span></button>
+                <button class="answer-option" type="button" data-option="2"><span class="key-hint">3</span><span id="option-2">22</span></button>
+                <button class="answer-option" type="button" data-option="3"><span class="key-hint">4</span><span id="option-3">53</span></button>
             </div>
-            
-            <!-- 解答後に表示される解説パネル（画面クリックで次へ進行） -->
-            <div class="explanation-panel" id="explanation-panel" onclick="proceedToNextStage()">
-                <div class="exp-title" id="exp-title">HTTP (80)</div>
-                <div class="exp-desc" id="exp-desc">ここにプロトコルの解説が入ります。</div>
-                <div class="exp-prompt">PRESS ANY KEY OR CLICK TO CONTINUE ▶</div>
-            </div>
-        </div>
-    
-        <!-- ゲームのメインロジック (タイマー、スコア計算、問題制御など) -->
-        <script src="output.js"></script>
-    </body>
+
+            <button id="explanation" class="explanation-panel" type="button" hidden>
+                <span class="eyebrow">PACKET ANALYSIS / COMPLETE</span>
+                <strong id="explanation-title" class="explanation-title">HTTP / PORT 80</strong>
+                <span id="explanation-description" class="explanation-description">Webサイト閲覧の基本ポート。</span>
+                <span id="next-prompt" class="next-prompt">PRESS ANY KEY TO CONTINUE</span>
+            </button>
+        </section>
+
+        <footer class="site-footer"><span>PORT_HACKER</span><span>LEARN THE PROTOCOL. READ THE PORT.</span></footer>
+    </main>
+</body>
 </html>
