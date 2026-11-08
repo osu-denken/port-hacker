@@ -229,3 +229,37 @@ body::after {
 @keyframes blink { 
     50% { opacity: 0.3; } 
 }
+
+
+/* --- INITIATE HACK: システム起動用の専用CTA --- */
+.swal-cyber .swal2-confirm.btn-hack {
+    position: relative;
+    padding: 14px 34px !important;
+    border: 1px solid var(--primary) !important;
+    border-radius: 2px !important;
+    background: linear-gradient(135deg, rgba(0, 255, 65, 0.18), rgba(0, 143, 17, 0.06)) !important;
+    color: var(--primary) !important;
+    font-family: 'Orbitron', 'Share Tech Mono', monospace !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.55);
+    box-shadow: inset 0 0 12px rgba(0, 255, 65, 0.08), 0 0 12px rgba(0, 255, 65, 0.12);
+    transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.swal-cyber .swal2-confirm.btn-hack::before {
+    content: '▶';
+    margin-right: 12px;
+    font-size: 0.8em;
+}
+.swal-cyber .swal2-confirm.btn-hack:hover {
+    background: rgba(0, 255, 65, 0.24) !important;
+    box-shadow: inset 0 0 18px rgba(0, 255, 65, 0.14), 0 0 22px rgba(0, 255, 65, 0.3);
+    transform: translateY(-1px);
+}
+.swal-cyber .swal2-confirm.btn-hack:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 4px;
+}
