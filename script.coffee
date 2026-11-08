@@ -59,7 +59,14 @@ state =
     currentOptions: []
 
 timerAnim = null              # Anime.jsによるタイマーアニメーションのインスタンス
-scoreObj = val: 0             # スコアのカウントアップ演出用オブジェクト
+scoreObj = val: 0
+
+# 配列をその場で Fisher-Yates シャッフルする
+shuffle = (items) ->
+    for i in [items.length - 1 .. 1]
+        j = Math.floor(Math.random() * (i + 1))
+        [items[i], items[j]] = [items[j], items[i]]
+    items             # スコアのカウントアップ演出用オブジェクト
 
 
 # --- アプリケーション起動時の処理 (DOMロード完了 & ports.jsonの読み込み) ---
@@ -162,9 +169,9 @@ bootGame = (mode, countStr) ->
     document.getElementById('max-stages').textContent = if state.maxStages is Infinity then '∞' else state.maxStages
 
     document.querySelectorAll('.btn-option').forEach (btn) ->
-        btn.addEventListener 'mouseenter', sfx.hover
+        btn.onmouseenter = sfx.hover
     
-    state.remainingQuestions = [...state.currentPool].sort -> 0.5 - Math.random()
+    state.remainingQuestions = shuffle([...state.currentPool])
     
     state.stage = 1
     state.score = 0
@@ -195,7 +202,7 @@ loadStage = ->
         btn.style.color = 'var(--text-main)'
 
     if state.remainingQuestions.length is 0
-        state.remainingQuestions = [...state.currentPool].sort -> 0.5 - Math.random()
+        state.remainingQuestions = shuffle([...state.currentPool])
         
     state.currentTarget = state.remainingQuestions.pop()
     
@@ -243,7 +250,9 @@ startTimer = (duration) ->
             if anim.progress > 70
                 document.getElementById('timer-bar').style.backgroundColor = 'var(--danger)'
         complete: ->
-            handleWrongAnswer(null)
+            unless state.isAnswered
+                state.isAnswered = true
+                handleWrongAnswer(null)
 
 
 # --- プレイヤーが選択肢をクリック・またはキー入力したときの判定処理 ---
