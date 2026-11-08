@@ -139,15 +139,22 @@ bootGame = (mode, countStr) ->
     document.getElementById('game-ui').style.display = 'block'
     
     state.mode = mode
-    if mode is 'normal'
-        state.currentPool = [...dbWellKnownFamous]
-        document.getElementById('mode-display').style.color = "var(--primary)"
-    if mode is 'hard'
-        state.currentPool = [...dbWellKnownFamous, ...dbWellKnownMinor]
-        document.getElementById('mode-display').style.color = "#ffaa00"
-    if mode is 'omake'
-        state.currentPool = [...dbWellKnownFamous, ...dbWellKnownMinor, ...dbRegisteredAndDev]
-        document.getElementById('mode-display').style.color = "var(--secondary)"
+
+    # モードごとの出題範囲と表示色をまとめて定義
+    modeSettings =
+        normal:
+            pool: [...dbWellKnownFamous]
+            color: "var(--primary)"
+        hard:
+            pool: [...dbWellKnownFamous, ...dbWellKnownMinor]
+            color: "#ffaa00"
+        omake:
+            pool: [...dbWellKnownFamous, ...dbWellKnownMinor, ...dbRegisteredAndDev]
+            color: "var(--secondary)"
+
+    settings = modeSettings[mode]
+    state.currentPool = settings.pool
+    document.getElementById('mode-display').style.color = settings.color
     
     state.maxStages = if countStr is 'endless' then Infinity else parseInt(countStr)
 
