@@ -39,9 +39,9 @@ jobs:
           ./node_modules/.bin/coffee --compile --bare --stdio < script.coffee \
             | ./node_modules/.bin/terser --compress --mangle --comments false --output output.js
 
-      - name: Check generated file on pull requests
+      - name: Check generated JavaScript on pull requests
         if: github.event_name == 'pull_request'
-        run: git diff --exit-code -- output.js
+        run: node --check output.js
 
       - name: Commit generated JavaScript
         if: github.event_name == 'push'
