@@ -1,0 +1,58 @@
+name: Build JavaScript
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "script.coffee"
+      - ".github/workflows/build-js.yml"
+  pull_request:
+    paths:
+      - "script.coffee"
+      - "output.js"
+      - ".github/workflows/build-js.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install build tools
+        run: npm install --no-save --package-lock=false coffeescript@2.7.0 terser@5.39.0
+
+      - name: Compile and minify
+        run: |
+          ./node_modules/.bin/coffee --compile --bare --stdio < script.coffee \
+            | ./node_modules/.bin/terser --compress --mangle --comments false --output output.js
+
+      - name: Check generated JavaScript on pull requests
+        if: github.event_name == 'pull_request'
+        run: node --check output.js
+
+      - name: Commit generated JavaScript
+        if: github.event_name == 'push'
+        run: |
+          if git diff --quiet -- output.js; then
+            echo "output.js is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output.js
+          git commit -m "Build minified JavaScript [skip ci]"
+          git push
